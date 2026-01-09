@@ -1,17 +1,15 @@
 import { WebSocket } from "ws";
 import { INIT_GAME } from "./messages";
-
+import { Chess } from "chess.js";
 export class Game{
     public player1:WebSocket
     public player2:WebSocket
-    public board:string//will change
-    public moves:string[]
+    public board:Chess
     public starttime:Date
     constructor(player1:WebSocket,player2:WebSocket){
         this.player1=player1,
         this.player2=player2
-        this.board=""//needs ficing
-        this.moves=[]
+        this.board=new Chess()
         this.starttime=new Date()
         this.player1.send(
             JSON.stringify({
@@ -33,15 +31,65 @@ export class Game{
     makeMove(socket:WebSocket,
         move:{
         from:string,
-        to:String
+        to:string
+        promotion?:string// always promote to queen for simplicity
         }
     ){
-        //check if it is the players move
-        //is the move valid
-        //update the board
-        //push it to the moves
-        //check if game is over
-        //send it to both the users
 
+        //check if it is the players move 
+        if((this.board.turn()=='w' && socket!==this.player1) ||
+        (this.board.turn()=='b' && socket!==this.player2)
+        ){
+            return
+        }
+
+        //is the move valid
+        try{
+            this.board.move(
+                move  
+            )
+        }
+        catch(e){
+            console.log(e)
+            return
+        }
+
+        //check if game is over
+        if(this.board.isGameOver()){
+            // notify both players that game is over
+            const result = this.board.isCheckmate() ? 
+            (this.board.turn()=='w' ? "black":"white")+" wins by checkmate"
+            : this.board.isStalemate() ? "draw by stalemate"
+            : this.board.isInsufficientMaterial() ? "draw by insufficient material"
+            : this.board.isThreefoldRepetition() ? "draw by threefold repetition"
+            : "draw"
+            const gameOverMessage = JSON.stringify({
+                type:"game_over",
+                result:result
+            })
+            this.player1.send(gameOverMessage)
+            this.player2.send(gameOverMessage)
+            return
+        }
+
+        //send the move to both the users
+        if(this.board.turn()=='w'){
+            // black just moved
+            this.player1.send(
+                JSON.stringify({
+                    type:"opponent_move",
+                    move:move
+                })
+            )
+        }
+        else{
+            // white just moved
+            this.player2.send(
+                JSON.stringify({
+                    type:"opponent_move",
+                    move:move
+                })
+            )
+        }
     }
 }

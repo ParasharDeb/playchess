@@ -34,8 +34,10 @@ export class GameManager{
                 }
             }
             if(message.type==MOVE){
-                //find the game with the socket of any of the user 
-                //make the game class handle with makemove function
+                const game = this.games.find(g=>g.player1===socket || g.player2===socket)
+                if(game){
+                    game.makeMove(socket,message.move)
+                }
             }
         })
     }
