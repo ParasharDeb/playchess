@@ -32,7 +32,7 @@ export class Game{
         move:{
         from:string,
         to:string
-        promotion?:string// always promote to queen for simplicity
+        promotion?:string
         }
     ){
 
@@ -40,19 +40,17 @@ export class Game{
         if((this.board.turn()=='w' && socket!==this.player1) ||
         (this.board.turn()=='b' && socket!==this.player2)
         ){
+            socket.send(JSON.stringify({ type: "error", message: "Not your turn" }));
             return
         }
 
-        //is the move valid
+        //is the move valid (chess.js returns null for invalid moves)
         try{
-            this.board.move(
-                move  
-            )
-        }
+            const result = this.board.move(move)}
         catch(e){
             console.log(e)
-            return
         }
+        
 
         //check if game is over
         if(this.board.isGameOver()){
@@ -72,24 +70,13 @@ export class Game{
             return
         }
 
-        //send the move to both the users
-        if(this.board.turn()=='w'){
-            // black just moved
-            this.player1.send(
-                JSON.stringify({
-                    type:"opponent_move",
-                    move:move
-                })
-            )
-        }
-        else{
-            // white just moved
-            this.player2.send(
-                JSON.stringify({
-                    type:"opponent_move",
-                    move:move
-                })
-            )
-        }
+        //send the move to the opponent
+        const opponent = socket === this.player1 ? this.player2 : this.player1
+        opponent.send(
+            JSON.stringify({
+                type: "opponent_move",
+                move: move
+            })
+        )
     }
 }
