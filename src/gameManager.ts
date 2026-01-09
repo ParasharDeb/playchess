@@ -1,5 +1,6 @@
 import { WebSocket } from "ws";
 import { Game } from "./game";
+import { INIT_GAME, MOVE } from "./messages";
 export class GameManager{
     private waitingplayer:WebSocket|null;
     private games:Game[]
@@ -7,7 +8,7 @@ export class GameManager{
     constructor(){
         this.games=[]    // should not be a in memeory varibale
         this.waitingplayer=null
-        this.users=[]   //didnt understand why this is empty**
+        this.users=[]    //didnt understand why this is empty**
     }
     addUser(socket:WebSocket){
         this.users.push(socket);
@@ -18,18 +19,23 @@ export class GameManager{
     }
     private addHandler(socket:WebSocket){
         socket.on("message",(data)=>{
-            const message=JSON.parse(data.toString())
+            const message=JSON.parse(data.toString()) // here didnt understand what data gives us is data a string an object??
 
-            if(message.type=="init_game"){
+            if(message.type==INIT_GAME){
                 if(this.waitingplayer){
                     const game = new Game(this.waitingplayer,socket)
                     this.games.push(game);
                     this.waitingplayer=null
+                    
                 }
                 else{
                     this.waitingplayer=socket
                     
                 }
+            }
+            if(message.type==MOVE){
+                //find the game with the socket of any of the user 
+                //make the game class handle with makemove function
             }
         })
     }
